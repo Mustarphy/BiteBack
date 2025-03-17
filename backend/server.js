@@ -11,9 +11,12 @@ const nodemailer = require("nodemailer");
 dotenv.config();
 
 // Initialize Firebase Admin
-const serviceAccount = require("./firebase-admin.json"); // Ensure this file exists
+
+// Decode the Base64 string and parse it as JSON
+const credentials = Buffer.from(process.env.FIREBASE_CREDENTIALS, "base64").toString("utf8");
+
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
+  credential: admin.credential.cert(JSON.parse(credentials)),
 });
 
 // Initialize Express
