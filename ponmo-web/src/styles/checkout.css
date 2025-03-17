@@ -1,0 +1,15 @@
+.paystack-button {
+  @apply w-full py-3 px-4 bg-primary text-white rounded-md hover:bg-secondary transition-colors duration-300;
+}
+
+.step {
+  @apply flex items-center justify-center w-8 h-8 rounded-full border-2 border-gray-300 text-gray-500;
+}
+
+.step.active {
+  @apply border-primary text-primary;
+}
+
+.form-input {
+  @apply appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary focus:border-primary;
+} 
