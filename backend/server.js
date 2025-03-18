@@ -10,25 +10,32 @@ const nodemailer = require("nodemailer");
 // Load environment variables
 dotenv.config();
 
-// Initialize Firebase Admin
+//  Debugging: Check if environment variables are loaded
+console.log("MongoDB URI:", process.env.MONGO_URI ? "Loaded " : "Not Found ");
 
-// Decode the Base64 string and parse it as JSON
-const credentials = Buffer.from(process.env.FIREBASE_CREDENTIALS, "base64").toString("utf8");
+//  Initialize Firebase Admin
+try {
+  const credentials = Buffer.from(process.env.FIREBASE_CREDENTIALS, "base64").toString("utf8");
+  admin.initializeApp({
+    credential: admin.credential.cert(JSON.parse(credentials)),
+  });
+  console.log(" Firebase Initialized!");
+} catch (error) {
+  console.error(" Firebase Initialization Error:", error.message);
+}
 
-admin.initializeApp({
-  credential: admin.credential.cert(JSON.parse(credentials)),
-});
+console.log("Firebase Credentials Loaded:", process.env.FIREBASE_CREDENTIALS ? " Yes" : " No");
 
-// Initialize Express
+//  Initialize Express
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+//  Connect to MongoDB with error handling
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log(" MongoDB Connected!"))
+  .catch((error) => console.error(" MongoDB Connection Error:", error));
 
 const NewsSchema = new mongoose.Schema({
   title: String,
@@ -40,16 +47,16 @@ const NewsSchema = new mongoose.Schema({
 
 const News = mongoose.model("News", NewsSchema);
 
-// ✅ Configure Nodemailer Transporter (Fixed)
+//  Configure Nodemailer Transporter
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: process.env.EMAIL_USER, // Your email
-    pass: process.env.EMAIL_PASS, // Your email app password
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
   },
 });
 
-// ✅ Middleware: Verify Firebase Token
+// Middleware: Verify Firebase Token
 const verifyToken = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
@@ -63,7 +70,7 @@ const verifyToken = async (req, res, next) => {
   }
 };
 
-// ✅ Route: Get Latest News
+//  Route: Get Latest News
 app.get("/api/news", async (req, res) => {
   try {
     const news = await News.find().sort({ publishedAt: -1 });
@@ -73,7 +80,7 @@ app.get("/api/news", async (req, res) => {
   }
 });
 
-// ✅ Route: Fetch & Store Latest News (Manual Trigger)
+//  Route: Fetch & Store Latest News
 app.get("/api/fetch-news", async (req, res) => {
   try {
     console.log("Fetching latest news...");
@@ -103,7 +110,7 @@ app.get("/api/fetch-news", async (req, res) => {
   }
 });
 
-// ✅ Automated News Fetching (Every Hour)
+//  Automated News Fetching (Every Hour)
 cron.schedule("0 * * * *", async () => {
   console.log("Running scheduled news update...");
   try {
@@ -133,7 +140,7 @@ cron.schedule("0 * * * *", async () => {
   }
 });
 
-// ✅ Route: Post News (Requires Authentication)
+//  Route: Post News (Requires Authentication)
 app.post("/api/news", verifyToken, async (req, res) => {
   try {
     const { title, description, url, imageUrl } = req.body;
@@ -146,7 +153,7 @@ app.post("/api/news", verifyToken, async (req, res) => {
   }
 });
 
-// ✅ Volunteer Form Email Route (Fixed)
+//  Volunteer Form Email Route
 app.post("/send-message", async (req, res) => {
   const { name, email, message } = req.body;
 
@@ -156,7 +163,7 @@ app.post("/send-message", async (req, res) => {
 
   const mailOptions = {
     from: process.env.EMAIL_USER,
-    to: process.env.EMAIL_USER, // Receiving email (your email)
+    to: process.env.EMAIL_USER,
     subject: `New Volunteer Message from ${name}`,
     text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`,
   };
@@ -170,6 +177,6 @@ app.post("/send-message", async (req, res) => {
   }
 });
 
-// Start Server
+//  Start Server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(` Server running on port ${PORT}`));
